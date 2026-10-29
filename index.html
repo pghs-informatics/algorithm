@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>울타리 밖으로</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 레이아웃: 규칙 한 줄 → 카드 12장 → 고정 하단 버튼. 결과는 맨 위에서 펼쳐짐 */
+:root {
+  --bg: #f3f5fa; --card: #ffffff; --ink: #142039; --muted: #5a6680; --line: #dce2ee;
+  --blue: #2450d8; --blue-soft: #e6ecfd; --sun: #ffcf3a; --good: #1a8a5a; --good-soft: #e3f4ec;
+  --bad: #d63c3c; --bad-soft: #fde9e9; --fence: #c9d2e4;
+  --display: "Black Han Sans", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1420; --card: #171e2d; --ink: #e8ecf5; --muted: #9aa6bf; --line: #2a3347;
+    --blue: #6f93ff; --blue-soft: #1d2a4d; --sun: #ffd45a; --good: #4cc98f; --good-soft: #14302a;
+    --bad: #ff7a7a; --bad-soft: #3a1d22; --fence: #2c3650; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1420; --card: #171e2d; --ink: #e8ecf5; --muted: #9aa6bf; --line: #2a3347;
+  --blue: #6f93ff; --blue-soft: #1d2a4d; --sun: #ffd45a; --good: #4cc98f; --good-soft: #14302a;
+  --bad: #ff7a7a; --bad-soft: #3a1d22; --fence: #2c3650; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.55; word-break: keep-all; overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 600px; margin-inline: auto; padding-block: max(20px, env(safe-area-inset-top, 0px)) 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+.fence { height: 40px; position: relative;
+  background:
+    linear-gradient(var(--fence), var(--fence)) 0 10px / 100% 4px no-repeat,
+    linear-gradient(var(--fence), var(--fence)) 0 26px / 100% 4px no-repeat,
+    repeating-linear-gradient(90deg, var(--fence) 0 7px, transparent 7px 20px) 0 0 / 100% 100% no-repeat;
+  -webkit-mask: linear-gradient(90deg, #000 0 38%, transparent 38% 62%, #000 62% 100%);
+          mask: linear-gradient(90deg, #000 0 38%, transparent 38% 62%, #000 62% 100%); }
+
+header { padding-block: 16px 4px; }
+.kicker { font-size: 13px; font-weight: 700; color: var(--blue); letter-spacing: .06em; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(38px, 11vw, 56px); line-height: 1.05; margin: 6px 0 16px; }
+h1 em { font-style: normal; background: linear-gradient(transparent 62%, var(--sun) 62% 92%, transparent 92%); }
+
+.rule { background: var(--ink); color: var(--bg); border-radius: 16px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+.rule .big { font-family: var(--display); font-size: clamp(24px, 6.4vw, 30px); line-height: 1.25; }
+.rule .big mark { background: var(--sun); color: #142039; padding: 0 .2em; border-radius: 4px; }
+.rule ol { margin: 0; padding-left: 1.25em; font-size: 15px; line-height: 1.6; }
+.fact { margin: 14px 2px 18px; font-size: 14.5px; color: var(--muted); }
+.fact b { color: var(--blue); }
+
+ol.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.item label { display: flex; gap: 14px; align-items: center; background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 16px; cursor: pointer; min-height: 68px; transition: border-color .15s, background .15s; }
+.item input { position: absolute; opacity: 0; pointer-events: none; }
+.box { flex: none; width: 30px; height: 30px; border-radius: 9px; border: 2px solid var(--fence); display: grid; place-items: center; background: var(--card); transition: background .15s, border-color .15s; }
+.box svg { width: 17px; height: 17px; opacity: 0; transition: opacity .12s; }
+.body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.txt { font-size: 17px; font-weight: 500; line-height: 1.5; }
+.item input:checked + label { border-color: var(--blue); background: var(--blue-soft); }
+.item input:checked + label .box { background: var(--blue); border-color: var(--blue); }
+.item input:checked + label .box svg { opacity: 1; }
+.item input:focus-visible + label { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+.why { display: none; font-size: 14.5px; line-height: 1.5; }
+.why b { display: inline-block; margin-right: 6px; }
+.graded .why { display: block; }
+.graded .item label { cursor: default; }
+.graded .item.ok input:checked + label { border-color: var(--good); background: var(--card); }
+.graded .item.ok input:checked + label .box { background: var(--good); border-color: var(--good); }
+.graded .item.ok .why b { color: var(--good); }
+.graded .item.trapped input:checked + label { border-color: var(--bad); background: var(--bad-soft); }
+.graded .item.trapped input:checked + label .box { background: var(--bad); border-color: var(--bad); }
+.graded .item.trapped .why b { color: var(--bad); }
+.graded .item.avoided label { border-color: var(--good); border-style: dashed; }
+.graded .item.avoided .why b { color: var(--good); }
+.graded .item.missed label { border-color: var(--blue); border-style: dashed; }
+.graded .item.missed .why b { color: var(--blue); }
+
+.bar { position: sticky; bottom: 0; margin-top: 14px; padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, var(--bg) 28%); }
+.bar-in { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 10px 10px 10px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 20px rgba(20,32,57,.08); }
+.meter { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.meter .lab { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.meter .lab.over { color: var(--bad); }
+.dots { display: flex; gap: 4px; }
+.dots i { flex: 1; height: 6px; border-radius: 3px; background: var(--line); transition: background .15s; }
+.dots i.on { background: var(--blue); }
+.dots.over i.on { background: var(--bad); }
+
+button, .btn { font: inherit; font-weight: 700; font-size: 17px; border: 0; border-radius: 12px; padding: 14px 20px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px; white-space: nowrap; }
+.primary { background: var(--blue); color: #fff; }
+.primary:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+.ghost { background: var(--card); color: var(--ink); border: 2px solid var(--line); }
+.win-btn { background: var(--sun); color: #142039; font-size: 19px; min-height: 60px; }
+button:focus-visible, .btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+.result { margin: 18px 0; border-radius: 18px; padding: 24px 20px; display: flex; flex-direction: column; gap: 14px; text-align: center; align-items: center; }
+.result.win { background: var(--good-soft); border: 2px solid var(--good); }
+.result.lose { background: var(--card); border: 2px solid var(--bad); }
+.result h2 { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 8vw, 40px); line-height: 1.15; margin: 0; }
+.result p { margin: 0; max-width: 30rem; }
+.result .btn, .result button { width: 100%; }
+.result .hint { font-size: 14px; color: var(--muted); }
+.badge { width: 76px; height: 76px; }
+
+footer { margin-top: 20px; font-size: 12.5px; color: var(--muted); text-align: center; line-height: 1.6; }
+
+/* ===== 인트로: 시험지 입수(入水) ===== */
+body.lock { overflow: hidden; }
+.intro { position: fixed; inset: 0; z-index: 50; background: #0d1330; color: #f3f5fa; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: max(56px, env(safe-area-inset-top, 0px)) 16px max(20px, env(safe-area-inset-bottom, 0px)); overflow: hidden; transition: opacity .35s, visibility .35s; }
+.intro.out { opacity: 0; visibility: hidden; }
+.skip { position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); right: 12px; background: rgba(255,255,255,.1); color: #c9d2e4; font-size: 14px; font-weight: 500; min-height: 40px; padding: 8px 14px; border-radius: 999px; }
+.stage { width: min(100%, 440px); height: auto; aspect-ratio: 4 / 3; display: block; shape-rendering: crispEdges; border-radius: 14px; flex: none; }
+.caps { display: grid; width: min(100%, 440px); min-height: 250px; text-align: center; }
+.cap { grid-area: 1 / 1; opacity: 0; transform: translateY(8px); transition: opacity .3s, transform .3s; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.intro[data-phase="1"] .c1, .intro[data-phase="2"] .c2, .intro[data-phase="3"] .c3, .intro[data-phase="4"] .c4 { opacity: 1; transform: none; pointer-events: auto; }
+.tag { background: #e23b3b; color: #fff; font-weight: 700; font-size: 14px; letter-spacing: .12em; padding: 4px 12px; border-radius: 6px; }
+.hl { font-family: var(--display); font-size: clamp(28px, 8vw, 38px); line-height: 1.2; }
+.hl mark { background: #ffcf3a; color: #142039; padding: 0 .15em; border-radius: 4px; }
+.sub { font-size: 15px; color: #c9d2e4; margin: 0; }
+.dict { background: #f6f1e3; color: #142039; border-radius: 12px; padding: 16px 20px; text-align: left; width: min(100%, 340px); box-shadow: 5px 5px 0 #ffcf3a; display: flex; flex-direction: column; gap: 4px; }
+.dict .w { font-family: var(--display); font-size: 34px; line-height: 1.1; }
+.dict .w small { font-family: serif; font-size: 24px; color: #5a6680; margin-left: 4px; }
+.dict .pos { color: #2450d8; font-weight: 700; margin-right: 6px; }
+.dict .note { font-size: 13.5px; color: #5a6680; margin-top: 4px; }
+.sorry { font-family: var(--display); font-size: clamp(42px, 12vw, 56px); line-height: 1.05; }
+.bow { width: 72px; height: 72px; shape-rendering: crispEdges; }
+.go { width: min(100%, 340px); }
+
+/* 무대 요소 기본 위치 */
+#paperMove { transform: translate(16px, 25px); }
+.drop, .spout, .ripple, .bub, .gurgle, .spot, .alert { opacity: 0; }
+.intro[data-phase="1"] .spot, .intro[data-phase="1"] .alert { opacity: 1; }
+.intro[data-phase="3"] #paperMove, .intro[data-phase="4"] #paperMove { visibility: hidden; }
+.intro[data-phase="4"] .skip { display: none; }
+.hook { opacity: 0; }
+.intro[data-phase="4"] .hook { opacity: 1; }
+.lol { font-family: var(--display); font-size: clamp(46px, 13vw, 62px); line-height: 1.05; color: #ffcf3a; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro[data-phase="1"] .tag { animation: blink 1s steps(2, jump-none) infinite; }
+  .intro[data-phase="1"] #paperSpin { animation: bob .6s steps(2, jump-none) infinite; }
+  .intro[data-phase="1"] .alert { animation: blink .5s steps(2, jump-none) infinite; }
+  .intro[data-phase="2"] #paperMove { animation: move 2.8s both; }
+  .intro[data-phase="2"] #paperSpin { animation: spin 2.8s both; }
+  .intro[data-phase="2"] #boardFlex { animation: boing 2.8s both; }
+  .intro[data-phase="2"] .spout { animation: spout .8s 2.24s both ease-out; }
+  .intro[data-phase="2"] .drop { animation: splash .9s 2.24s both ease-out; }
+  .intro[data-phase="2"] .ripple { animation: ripple 1.4s 2.35s infinite ease-out; }
+  .intro[data-phase="3"] .ripple { animation: ripple 1.8s infinite ease-out; }
+  .intro[data-phase="3"] .bub { animation: bub 1.6s infinite steps(8, end); }
+  .intro[data-phase="3"] .bub:nth-child(2) { animation-delay: .5s; }
+  .intro[data-phase="3"] .bub:nth-child(3) { animation-delay: 1s; }
+  .intro[data-phase="3"] .gurgle { animation: blink 1.2s steps(2, jump-none) infinite; }
+  .intro[data-phase="3"] #bowT { animation: bow 1.6s .2s 2 both; }
+  .intro[data-phase="4"] .hook { animation: hook .9s cubic-bezier(.3,1.5,.5,1) both, sway 1.2s .9s ease-in-out infinite alternate; }
+  .intro[data-phase="4"] .lol { animation: pop .5s .15s cubic-bezier(.2,1.6,.4,1) both; }
+  @keyframes hook { from { transform: translateY(-60px); } to { transform: translateY(0); } }
+  @keyframes sway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+  @keyframes blink { 0% { opacity: 1; } 100% { opacity: .25; } }
+  @keyframes bob { 0% { transform: translateY(0); } 100% { transform: translateY(-1px); } }
+  @keyframes move {
+    0%   { transform: translate(16px, 25px); }
+    32%  { transform: translate(34px, 25px); animation-timing-function: ease-in; }
+    40%  { transform: translate(36px, 28px); animation-timing-function: ease-out; }
+    52%  { transform: translate(48px, 13px); animation-timing-function: linear; }
+    62%  { transform: translate(60px, 12px); animation-timing-function: ease-in; }
+    80%  { transform: translate(78px, 62px); animation-timing-function: ease-out; }
+    100% { transform: translate(80px, 102px); }
+  }
+  @keyframes spin {
+    0% { transform: rotate(0); } 8% { transform: rotate(-8deg); } 16% { transform: rotate(8deg); }
+    24% { transform: rotate(-8deg); } 32%, 40% { transform: rotate(0); }
+    80%, 100% { transform: rotate(540deg); }
+  }
+  @keyframes boing {
+    0%, 36% { transform: rotate(0); } 42% { transform: rotate(7deg); } 48% { transform: rotate(-4deg); }
+    54% { transform: rotate(2deg); } 60%, 100% { transform: rotate(0); }
+  }
+  @keyframes spout { 0% { opacity: 1; transform: scaleY(0); } 35% { opacity: 1; transform: scaleY(1.3); } 100% { opacity: 0; transform: scaleY(0); } }
+  @keyframes splash {
+    0% { opacity: 1; transform: translate(0, 0); }
+    55% { opacity: 1; transform: translate(var(--dx), var(--dy)); }
+    100% { opacity: 0; transform: translate(calc(var(--dx) * 1.4), calc(var(--dy) * .1 + 6px)); }
+  }
+  @keyframes ripple { 0% { opacity: .9; transform: scale(.6); } 100% { opacity: 0; transform: scale(3); } }
+  @keyframes bub { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--bx), -22px); } }
+  @keyframes bow { 0%, 12% { transform: rotate(0); } 35%, 65% { transform: rotate(62deg); } 88%, 100% { transform: rotate(0); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro[data-phase="3"] .ripple, .intro[data-phase="3"] .gurgle { opacity: .8; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .result { animation: rise .4s cubic-bezier(.2,.8,.2,1) both; }
+  .win .badge { animation: pop .6s .1s cubic-bezier(.2,1.6,.4,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { transform: scale(.4) rotate(-12deg); } to { transform: none; } }
+}
+</style>
+</head>
+<body class="lock">
+<div class="intro" id="intro" data-phase="1" role="dialog" aria-label="인트로">
+  <button type="button" class="skip" id="skip">건너뛰기</button>
+
+  <svg class="stage" viewBox="0 0 120 90" aria-hidden="true">
+    <rect width="120" height="90" fill="#1b2756"/>
+    <g fill="#ffcf3a">
+      <rect x="62" y="8" width="1" height="1"/><rect x="88" y="14" width="1" height="1"/><rect x="104" y="6" width="1" height="1"/>
+      <rect x="74" y="24" width="1" height="1"/><rect x="112" y="30" width="1" height="1"/><rect x="50" y="18" width="1" height="1"/>
+    </g>
+    <g fill="#f6f1e3"><rect x="97" y="14" width="6" height="10"/><rect x="95" y="16" width="10" height="6"/><rect x="96" y="15" width="8" height="8"/></g>
+    <g fill="#d9d2bd"><rect x="98" y="17" width="2" height="2"/><rect x="101" y="20" width="1" height="1"/></g>
+    <rect y="54" width="120" height="8" fill="#26346e"/>
+    <g fill="#33438a"><rect x="14" y="54" width="106" height="1"/></g>
+    <polygon class="spot" points="10,0 26,0 30,36 2,36" fill="#fff4c2" fill-opacity=".12"/>
+
+    <!-- 다이빙대 -->
+    <rect x="0" y="36" width="10" height="54" fill="#7f93c0"/>
+    <g fill="#6a7eac"><rect x="0" y="44" width="10" height="1"/><rect x="0" y="52" width="10" height="1"/><rect x="0" y="60" width="10" height="1"/><rect x="0" y="68" width="10" height="1"/><rect x="0" y="76" width="10" height="1"/><rect x="0" y="84" width="10" height="1"/><rect x="5" y="36" width="1" height="54"/></g>
+    <g transform="translate(6 37)"><g id="boardFlex">
+      <rect x="0" y="-1" width="38" height="3" fill="#e0a25a"/>
+      <rect x="0" y="2" width="38" height="1" fill="#a86f33"/>
+    </g></g>
+
+    <!-- 시험지 -->
+    <g id="paperMove"><g id="paperSpin">
+      <rect x="-7" y="-9" width="14" height="18" fill="#f6f1e3"/>
+      <rect x="5" y="-9" width="2" height="2" fill="#c9bfa5"/>
+      <text x="0" y="-4.6" text-anchor="middle" font-size="2.9" font-weight="700" fill="#142039" font-family="Noto Sans KR, sans-serif">기말고사</text>
+      <rect x="-4" y="-1" width="2" height="2" fill="#142039"/><rect x="2" y="-1" width="2" height="2" fill="#142039"/>
+      <rect x="-1" y="2" width="2" height="1" fill="#e26a6a"/>
+      <rect x="-5" y="4" width="7" height="1" fill="#b8bfd0"/><rect x="-5" y="6" width="5" height="1" fill="#b8bfd0"/>
+      <rect x="3" y="4" width="3" height="3" fill="#e23b3b"/>
+      <rect x="-4" y="9" width="2" height="2" fill="#142039"/><rect x="2" y="9" width="2" height="2" fill="#142039"/>
+    </g></g>
+    <g class="alert"><rect x="15" y="6" width="2" height="6" fill="#ffcf3a"/><rect x="15" y="13" width="2" height="2" fill="#ffcf3a"/></g>
+
+    <!-- 물 -->
+    <rect x="10" y="62" width="110" height="28" fill="#2f6fe0"/>
+    <g fill="#6fa8ff"><rect x="12" y="62" width="6" height="1"/><rect x="26" y="62" width="8" height="1"/><rect x="44" y="62" width="6" height="1"/><rect x="60" y="62" width="8" height="1"/><rect x="92" y="62" width="6" height="1"/><rect x="108" y="62" width="8" height="1"/></g>
+    <g fill="#2559c2"><rect x="18" y="70" width="10" height="1"/><rect x="46" y="76" width="12" height="1"/><rect x="96" y="72" width="10" height="1"/><rect x="30" y="84" width="10" height="1"/><rect x="70" y="82" width="8" height="1"/></g>
+
+    <!-- 물보라 -->
+    <g transform="translate(78 62)">
+      <ellipse class="ripple" cx="0" cy="0" rx="5" ry="1.4" fill="none" stroke="#cfe2ff" stroke-width=".8"/>
+      <rect class="spout" x="-3" y="-12" width="6" height="12" fill="#cfe2ff"/>
+      <rect class="drop" x="-1" y="-1" width="2" height="2" fill="#9cc4ff" style="--dx:-12px;--dy:-16px"/>
+      <rect class="drop" x="-1" y="-1" width="2" height="2" fill="#cfe2ff" style="--dx:-6px;--dy:-22px"/>
+      <rect class="drop" x="-1" y="-1" width="2" height="2" fill="#9cc4ff" style="--dx:0px;--dy:-26px"/>
+      <rect class="drop" x="-1" y="-1" width="2" height="2" fill="#cfe2ff" style="--dx:7px;--dy:-21px"/>
+      <rect class="drop" x="-1" y="-1" width="2" height="2" fill="#9cc4ff" style="--dx:13px;--dy:-15px"/>
+      <rect class="drop" x="-1" y="-1" width="2" height="2" fill="#cfe2ff" style="--dx:-16px;--dy:-8px"/>
+      <rect class="drop" x="-1" y="-1" width="2" height="2" fill="#cfe2ff" style="--dx:17px;--dy:-7px"/>
+    </g>
+    <g transform="translate(80 84)">
+      <rect class="bub" width="2" height="2" fill="#cfe2ff" style="--bx:-2px"/>
+      <rect class="bub" x="3" width="1.5" height="1.5" fill="#cfe2ff" style="--bx:2px"/>
+      <rect class="bub" x="-3" width="1.5" height="1.5" fill="#cfe2ff" style="--bx:-1px"/>
+    </g>
+    <g transform="translate(60 0)"><g class="hook">
+      <rect x="-0.5" y="0" width="1" height="34" fill="#c9d2e4"/>
+      <rect x="-2" y="34" width="4" height="3" fill="#e23b3b"/><rect x="-2" y="37" width="4" height="2" fill="#f3f5fa"/>
+      <rect x="-0.5" y="39" width="1" height="8" fill="#9aa6bf"/>
+      <rect x="-0.5" y="47" width="5" height="1" fill="#9aa6bf"/><rect x="4" y="43" width="1" height="5" fill="#9aa6bf"/>
+      <rect x="3" y="43" width="1" height="1" fill="#9aa6bf"/>
+    </g></g>
+    <text class="gurgle" x="86" y="76" font-size="5" font-weight="700" fill="#f3f5fa" font-family="Noto Sans KR, sans-serif">꼬르륵…</text>
+  </svg>
+
+  <div class="caps">
+    <div class="cap c1">
+      <span class="tag">속보</span>
+      <div class="hl">2026학년도 2학기<br><mark>기말고사 시험지</mark> 입수!</div>
+      <p class="sub">탐구팀이 단독으로 확보했습니다…?</p>
+    </div>
+    <div class="cap c2">
+      <div class="dict">
+        <div class="w">입수<small>入水</small></div>
+        <div><span class="pos">[명사]</span>물속으로 들어감.</div>
+        <div class="note">※ 入手(손에 넣음)가 아닙니다.</div>
+      </div>
+    </div>
+    <div class="cap c3">
+      <svg class="bow" viewBox="0 0 30 30" aria-hidden="true"><g transform="translate(15 21)">
+        <rect x="-2.5" y="3" width="2" height="5" fill="#ffd9b0"/><rect x="0.5" y="3" width="2" height="5" fill="#ffd9b0"/>
+        <rect x="-3" y="8" width="3" height="1" fill="#142039"/><rect x="0.5" y="8" width="3" height="1" fill="#142039"/>
+        <rect x="-3.5" y="-1" width="7" height="4" fill="#2450d8"/>
+        <g id="bowT">
+          <rect x="-3" y="-9" width="6" height="9" fill="#f3f5fa"/>
+          <rect x="-1" y="-9" width="2" height="2" fill="#2450d8"/>
+          <rect x="-3.5" y="-16" width="7" height="7" fill="#ffd9b0"/>
+          <rect x="-3.5" y="-17" width="7" height="3" fill="#2a1d14"/>
+          <rect x="-4.5" y="-16" width="2" height="6" fill="#2a1d14"/>
+          <rect x="1" y="-12" width="1" height="1" fill="#142039"/>
+        </g>
+      </g></svg>
+      <div class="sorry">죄송합니다</div>
+      <p class="sub">시험지는 물에 빠졌어요.<br>대신 <b style="color:#ffcf3a">찐 문제</b>를 가져왔어요.</p>
+      <button type="button" class="win-btn go" id="go">찐 문제 풀러 가기</button>
+    </div>
+    <div class="cap c4">
+      <div class="lol">응 낚였어~</div>
+      <p class="sub">건너뛰기 누를 줄 알았지.<br>벌칙으로 <b style="color:#ffcf3a">처음부터 다시</b> 보세요.</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="fence" aria-hidden="true"></div>
+
+  <header>
+    <div class="kicker">찐 문제 · 건강한 미디어 생활 캠페인</div>
+    <h1>알고리즘의<br><em>울타리 밖으로</em></h1>
+    <div class="rule">
+      <div class="big">12개 중 <mark>함정 3개</mark>를 빼고<br>건강한 습관 <mark>9개</mark>만 골라요</div>
+      <ol>
+        <li>건강한 미디어 습관에 체크해요.</li>
+        <li>9개를 고르면 결과 확인 버튼이 켜져요.</li>
+        <li>함정을 모두 피하면 경품 응모 기회!</li>
+      </ol>
+    </div>
+    <p class="fact">우리 탐구팀 실험에서 같은 주제만 본 계정은 추천 20개 중 <b>16개</b>가 같은 주제였어요. 다른 주제를 일주일 보자 <b>6개</b>로 줄었어요.</p>
+  </header>
+
+  <div id="result" hidden></div>
+
+  <form id="quiz" novalidate>
+    <ol class="list" id="list"></ol>
+    <div class="bar" id="bar">
+      <div class="bar-in">
+        <div class="meter">
+          <span class="lab" id="lab">0 / 9개 골랐어요</span>
+          <div class="dots" id="dots" aria-hidden="true"></div>
+        </div>
+        <button type="submit" class="primary" id="submit" disabled>결과 확인</button>
+      </div>
+    </div>
+  </form>
+
+  <footer>포항여자고등학교 유튜브 추천 알고리즘 탐구팀</footer>
+</div>
+
+<script>
+/* ===== 설정 ===== */
+const FORM_URL = 'https://forms.gle/v6bzoiBTUEcSRgUE9';
+
+/* ===== 문항 (trap: true 가 함정) ===== */
+const ITEMS = [
+  { text: '추천 영상이 뜨면 "왜 이게 나한테 떴지?" 생각해 본다.',
+    why: '추천은 내 시청 기록으로 만들어져요. 이유를 생각하면 알고리즘이 고른 길이 보여요.' },
+  { text: '일주일에 한 번은 안 보던 분야 영상을 직접 검색해 본다.',
+    why: '우리 실험에서 다른 주제를 일주일 보자 추천이 크게 바뀌었어요.' },
+  { text: '관심 없는 추천은 "관심 없음"을 눌러 정리한다.',
+    why: '원하지 않는 방향을 알고리즘에 직접 알려주는 방법이에요.' },
+  { text: '추천 영상만 봐도 내 취향에 딱 맞으니, 따로 검색할 필요는 없다.',
+    why: '추천만 따라가면 보는 범위가 점점 좁아져요. 우리 실험에서 3주 만에 20개 중 16개가 같은 주제가 됐어요.',
+    trap: true },
+  { text: '같은 뉴스를 여러 채널에서 비교해 본다.',
+    why: '한 곳만 보면 그게 전부라고 믿기 쉬워요. 비교하면 사실과 의견이 구분돼요.' },
+  { text: '제목이나 썸네일이 자극적이면 한 번 더 의심한다.',
+    why: '자극적인 제목은 클릭을 끌려고 만든 경우가 많아요.' },
+  { text: '자동재생을 끄고, 다음 영상은 내가 고른다.',
+    why: '자동재생을 끄면 다음 영상을 고르는 사람이 내가 돼요.' },
+  { text: '내가 믿는 채널 하나만 보면 가짜뉴스에 속을 일이 없다.',
+    why: '한 곳의 생각만 들으면 그것만 맞다고 믿게 돼요. 확증편향을 키우는 습관이에요.',
+    trap: true },
+  { text: '정보를 알려주는 영상은 출처가 있는지 확인한다.',
+    why: '출처가 있어야 다시 확인할 수 있어요.' },
+  { text: '나와 생각이 다른 댓글도 읽어 본다.',
+    why: '다른 의견을 봐야 내 생각이 치우쳤는지 돌아볼 수 있어요.' },
+  { text: '조회수와 좋아요가 많은 영상은 무조건 사실이다.',
+    why: '인기가 많다고 사실은 아니에요. 조회수는 관심을 보여줄 뿐이에요.',
+    trap: true },
+  { text: '볼 시간을 정해 두고 그 시간만 본다.',
+    why: '정해 둔 시간이 있으면 추천에 끌려 계속 보는 일을 막을 수 있어요.' }
+];
+
+/* ===== 동작 ===== */
+const NEED = ITEMS.filter((x) => !x.trap).length;
+const TRAPS = ITEMS.length - NEED;
+const list = document.getElementById('list');
+const form = document.getElementById('quiz');
+const submit = document.getElementById('submit');
+const lab = document.getElementById('lab');
+const dots = document.getElementById('dots');
+const bar = document.getElementById('bar');
+const resultEl = document.getElementById('result');
+const CHECK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+const render = () => {
+  list.replaceChildren();
+  ITEMS.forEach((it, i) => {
+    const li = document.createElement('li'); li.className = 'item';
+    const id = 'q' + (i + 1);
+    li.innerHTML = `<input type="checkbox" id="${id}" name="${id}"><label for="${id}"><span class="box">${CHECK}</span><span class="body"><span class="txt"></span><span class="why"><b></b><span class="wt"></span></span></span></label>`;
+    li.querySelector('.txt').textContent = it.text;
+    li.querySelector('.wt').textContent = it.why;
+    list.appendChild(li);
+  });
+  dots.replaceChildren(...Array.from({ length: NEED }, () => document.createElement('i')));
+};
+
+const update = () => {
+  const n = form.querySelectorAll('input:checked').length;
+  const over = n > NEED;
+  lab.textContent = over ? `${n}개 골랐어요 · ${n - NEED}개를 빼 주세요` : `${n} / ${NEED}개 골랐어요`;
+  lab.classList.toggle('over', over);
+  dots.classList.toggle('over', over);
+  [...dots.children].forEach((d, i) => d.classList.toggle('on', i < Math.min(n, NEED)));
+  submit.disabled = n !== NEED;
+};
+
+const grade = () => {
+  let trapped = 0;
+  [...list.children].forEach((li, i) => {
+    const it = ITEMS[i], input = li.querySelector('input'), on = input.checked, tag = li.querySelector('.why b');
+    input.disabled = true;
+    if (it.trap && on) { li.classList.add('trapped'); tag.textContent = '함정!'; trapped++; }
+    else if (it.trap) { li.classList.add('avoided'); tag.textContent = '함정 피함'; }
+    else if (on) { li.classList.add('ok'); tag.textContent = '정답'; }
+    else { li.classList.add('missed'); tag.textContent = '건강한 습관'; }
+  });
+  form.classList.add('graded');
+  bar.hidden = true;
+  resultEl.hidden = false;
+
+  if (trapped === 0) {
+    resultEl.className = 'result win';
+    resultEl.innerHTML = `
+      <svg class="badge" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="36" fill="var(--sun)"/><path d="M23 39l10 10 20-22" fill="none" stroke="#142039" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h2>완벽해요!<br>함정 ${TRAPS}개를 모두 피했어요</h2>
+      <p>그럴듯한 말에 속지 않는 당신은 이미 알고리즘의 울타리 밖으로 나갈 줄 아는 사람이에요.</p>
+      <a class="btn win-btn" href="${FORM_URL}" target="_blank" rel="noopener">경품 응모하기</a>
+      <p class="hint">아래에서 함정이 왜 함정인지 확인해 보세요.</p>`;
+  } else {
+    resultEl.className = 'result lose';
+    resultEl.innerHTML = `
+      <h2>아쉬워요!<br>함정 ${trapped}개에 걸렸어요</h2>
+      <p>빨간 칸이 함정이에요. 이유를 읽어 보고 다시 도전해 보세요.</p>
+      <button type="button" class="ghost" id="retry">다시 도전하기</button>`;
+    document.getElementById('retry').addEventListener('click', reset);
+  }
+  resultEl.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+};
+
+const reset = () => {
+  resultEl.hidden = true; resultEl.replaceChildren();
+  form.classList.remove('graded');
+  bar.hidden = false;
+  render(); update();
+  window.scrollTo({ top: 0, behavior: 'auto' });
+};
+
+form.addEventListener('change', update);
+form.addEventListener('submit', (e) => { e.preventDefault(); if (!submit.disabled) grade(); });
+render(); update();
+
+/* ===== 인트로 진행 ===== */
+const intro = document.getElementById('intro');
+const P1 = 2300, P2 = 3300;
+const timers = [];
+const setPhase = (p) => {
+  intro.dataset.phase = p;
+  if (p === '3') timers.push(setTimeout(() => document.getElementById('go').focus({ preventScroll: true }), 350));
+};
+const closeIntro = () => {
+  timers.forEach(clearTimeout);
+  intro.classList.add('out');
+  document.body.classList.remove('lock');
+  window.scrollTo(0, 0);
+  setTimeout(() => { intro.hidden = true; }, 400);
+};
+const play = () => {
+  timers.forEach(clearTimeout); timers.length = 0;
+  setPhase('1');
+  timers.push(setTimeout(() => setPhase('2'), P1), setTimeout(() => setPhase('3'), P1 + P2));
+};
+/* 건너뛰기 → '응 낚였어~' → 처음부터 다시 다이빙 */
+document.getElementById('skip').addEventListener('click', () => {
+  timers.forEach(clearTimeout); timers.length = 0;
+  setPhase('4');
+  timers.push(setTimeout(play, 2200));
+});
+document.getElementById('go').addEventListener('click', closeIntro);
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  setPhase('3');
+} else {
+  play();
+}
+</script>
+</body>
+</html>
